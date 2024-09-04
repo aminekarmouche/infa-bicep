@@ -1,4 +1,3 @@
-// Parameters for the deployment
 @description('Name of the Managed Environment')
 param managedEnvironmentName string = 'myManagedEnvironment'
 
@@ -16,8 +15,8 @@ resource managedEnvironment 'Microsoft.App/managedEnvironments@2023-03-01' = {
     appLogsConfiguration: {
       destination: 'log-analytics'
       logAnalyticsConfiguration: {
-        customerId: '<your-log-analytics-workspace-id>'  // You need to provide the Log Analytics workspace ID
-        sharedKey: '<your-log-analytics-workspace-key>'  // You need to provide the shared key
+        customerId: '<your-log-analytics-workspace-id>'  // Replace with your Log Analytics workspace ID
+        sharedKey: '<your-log-analytics-workspace-key>'  // Replace with your Log Analytics workspace shared key
       }
     }
   }
@@ -31,39 +30,57 @@ resource acr 'Microsoft.ContainerRegistry/registries@2023-01-01' = {
     name: 'Basic'
   }
   properties: {
-    adminUserEnabled: true
+    adminUserEnabled: false  // Admin user disabled; using Managed Identity instead
   }
+}
+
+// Create the User-Assigned Managed Identity
+resource managedIdentity 'Microsoft.ManagedIdentity/userAssignedIdentities@2022-01-31' = {
+  name: 'myContainerAppIdentity'
+  location: location
 }
 
 // Create the Azure Container App
 resource containerApp 'Microsoft.App/containerApps@2024-03-01' = {
   name: containerAppName
   location: location
+  identity: {
+    type: 'UserAssigned'
+    userAssignedIdentities: {
+      '${managedIdentity.id}': {}  // Use the Managed Identity for the Container App
+    }
+  }
   properties: {
-    managedEnvironmentId: managedEnvironment.id  // Use the symbolic reference to the managed environment
+    managedEnvironmentId: managedEnvironment.id  // Reference the Managed Environment
     configuration: {
       ingress: {
-        external: true
+        external: true  // Publicly accessible
         targetPort: 80
       }
       registries: [
         {
-          server: acr.properties.loginServer
-          username: acr.listCredentials().username
-          password: acr.listCredentials().passwords[0].value
+          server: acr.properties.loginServer  // ACR login server
+          identity: managedIdentity.id  // Use Managed Identity for ACR authentication
         }
       ]
     }
     template: {
       containers: [
         {
-          name: 'mySandboxContainer'
-          image: '${acr.properties.loginServer}/mysandboxapp:latest'
+          name: 'myContainer'
+          image: '${acr.properties.loginServer}/myapp:latest'  // Reference the container image from ACR
+          resources: {
+            cpu: json('0.5')
+            memory: '250Mb'
+          }
         }
       ]
     }
   }
 }
 
+// Outputs for debugging or further use
 output managedEnvironmentName string = managedEnvironment.name
 output containerAppUrl string = containerApp.properties.configuration.ingress.fqdn
+output acrLoginServer string = acr.properties.loginServer
+output managedIdentityName string = managedIdentity.name

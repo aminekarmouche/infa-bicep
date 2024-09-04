@@ -11,15 +11,6 @@ param location string = resourceGroup().location
 resource managedEnvironment 'Microsoft.App/managedEnvironments@2023-03-01' = {
   name: managedEnvironmentName
   location: location
-  properties: {
-    appLogsConfiguration: {
-      destination: 'log-analytics'
-      logAnalyticsConfiguration: {
-        customerId: '<your-log-analytics-workspace-id>'  // Replace with your Log Analytics workspace ID
-        sharedKey: '<your-log-analytics-workspace-key>'  // Replace with your Log Analytics workspace shared key
-      }
-    }
-  }
 }
 
 // Create the Azure Container Registry (ACR)

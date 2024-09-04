@@ -31,7 +31,4 @@ jobs:
         scope: resourcegroup
         resourceGroupName: 'rg-sandbox-dev'
         template: ./bicep/environments/vnet.bicep
-        parameters: |
-          vnetName=sandbox-dev
-          location=EastUS
         deploymentName: vnet-deployment

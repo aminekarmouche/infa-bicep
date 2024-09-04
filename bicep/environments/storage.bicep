@@ -16,12 +16,16 @@ resource storageAccount 'Microsoft.Storage/storageAccounts@2023-01-01' = {
   }
 }
 
-resource blobContainer 'Microsoft.Storage/storageAccounts/blobServices/containers@2023-01-01' = {
-  name: '${storageAccount.name}/defaultcontainer'
-  properties: {}
+resource blobService 'Microsoft.Storage/storageAccounts/blobServices@2023-01-01' = {
+  name: '${storageAccount.name}/default'
   dependsOn: [
     storageAccount
   ]
+}
+resource blobContainer 'Microsoft.Storage/storageAccounts/blobServices/containers@2023-01-01' = {
+  name: 'defaultcontainer'
+  parent: blobService
+  properties: {}
 }
 
 output storageAccountName string = storageAccount.name

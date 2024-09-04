@@ -14,7 +14,7 @@ resource managedEnvironment 'Microsoft.App/managedEnvironments@2023-03-01' = {
 }
 
 // Create the Azure Container Registry (ACR)
-resource acr 'Microsoft.ContainerRegistry/registries@2023-01-01' = {
+resource acr 'Microsoft.ContainerRegistry/registries@2023-01-01-preview' = {
   name: 'myContainerRegistry'
   location: location
   sku: {
@@ -26,7 +26,7 @@ resource acr 'Microsoft.ContainerRegistry/registries@2023-01-01' = {
 }
 
 // Create the User-Assigned Managed Identity
-resource managedIdentity 'Microsoft.ManagedIdentity/userAssignedIdentities@2022-01-31' = {
+resource managedIdentity 'Microsoft.ManagedIdentity/userAssignedIdentities@2023-01-31' = {
   name: 'myContainerAppIdentity'
   location: location
 }

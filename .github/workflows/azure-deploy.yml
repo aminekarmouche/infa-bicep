@@ -14,6 +14,10 @@ jobs:
   deploy-bicep:
     runs-on: ubuntu-latest
 
+    strategy:
+      matrix:
+        bicep_templates: [vnet.bicep, vnet.storage]
+
     steps:
     - name: checkout repo
       uses: actions/checkout@v4
@@ -30,5 +34,5 @@ jobs:
       with:
         scope: resourcegroup
         resourceGroupName: 'rg-sandbox-dev'
-        template: ./bicep/environments/vnet.bicep
-        deploymentName: vnet-deployment
+        template: ./bicep/environments/${{ matrix.bicep_template }}
+        deploymentName: ${{ matrix.bicep_template }}-deployment

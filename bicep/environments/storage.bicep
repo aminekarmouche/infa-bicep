@@ -1,5 +1,5 @@
 @description('Name of the storage account')
-param storageAccountName string = 'sa-sandbox-dev'
+param storageAccountName string = 'sasandboxdev'
 
 @description('Location for the storage account')
 param location string = resourceGroup().location

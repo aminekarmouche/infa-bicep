@@ -1,21 +1,46 @@
-// Define the Azure Container Registry
-resource acr 'Microsoft.ContainerRegistry/registries@2023-01-01-preview' = {
+// Parameters for the deployment
+@description('Name of the Managed Environment')
+param managedEnvironmentName string = 'myManagedEnvironment'
+
+@description('Name of the Container App')
+param containerAppName string = 'myContainerApp'
+
+@description('Location for the resources')
+param location string = resourceGroup().location
+
+// Create the Managed Environment for Azure Container Apps
+resource managedEnvironment 'Microsoft.App/managedEnvironments@2023-03-01' = {
+  name: managedEnvironmentName
+  location: location
+  properties: {
+    appLogsConfiguration: {
+      destination: 'log-analytics'
+      logAnalyticsConfiguration: {
+        customerId: '<your-log-analytics-workspace-id>'  // You need to provide the Log Analytics workspace ID
+        sharedKey: '<your-log-analytics-workspace-key>'  // You need to provide the shared key
+      }
+    }
+  }
+}
+
+// Create the Azure Container Registry (ACR)
+resource acr 'Microsoft.ContainerRegistry/registries@2023-01-01' = {
   name: 'myContainerRegistry'
-  location: 'East US'
+  location: location
   sku: {
     name: 'Basic'
   }
   properties: {
-    adminUserEnabled: true  // Move adminUserEnabled under properties
+    adminUserEnabled: true
   }
 }
 
-// Define the Azure Container App
+// Create the Azure Container App
 resource containerApp 'Microsoft.App/containerApps@2024-03-01' = {
-  name: 'myContainerApp'
-  location: 'East US'
+  name: containerAppName
+  location: location
   properties: {
-    managedEnvironmentId: '/subscriptions/{subscription-id}/resourceGroups/{resource-group}/providers/Microsoft.App/managedEnvironments/{environment-name}'
+    managedEnvironmentId: managedEnvironment.id  // Use the symbolic reference to the managed environment
     configuration: {
       ingress: {
         external: true
@@ -32,10 +57,13 @@ resource containerApp 'Microsoft.App/containerApps@2024-03-01' = {
     template: {
       containers: [
         {
-          name: 'sandboxAppContainer'
+          name: 'mySandboxContainer'
           image: '${acr.properties.loginServer}/mysandboxapp:latest'
         }
       ]
     }
   }
 }
+
+output managedEnvironmentName string = managedEnvironment.name
+output containerAppUrl string = containerApp.properties.configuration.ingress.fqdn

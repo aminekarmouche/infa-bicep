@@ -30,5 +30,7 @@ jobs:
       with:
         scope: resourcegroup
         resourceGroupName: 'rg-sandbox-dev'
-        template: ./bicep/environments/storage.bicep
+        template: ./bicep/environments/keyvault.bicep
+        parameters: |
+            tenantId=${{ secrets.AZURE_TENANT_ID }}
         deploymentName: vnet-deployment

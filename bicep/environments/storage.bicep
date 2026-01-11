@@ -25,5 +25,20 @@ resource blobContainer 'Microsoft.Storage/storageAccounts/blobServices/container
   name: 'defaultcontainer'
 }
 
+@description('Vulnerabilities')
+param tableName string = 'vulnerabilities'
+
+resource tableService 'Microsoft.Storage/storageAccounts/tableServices@2023-01-01' = {
+  parent: storageAccount
+  name: 'default'
+}
+
+resource table 'Microsoft.Storage/storageAccounts/tableServices/tables@2023-01-01' = {
+  parent: tableService
+  name: tableName
+}
+
 output storageAccountName string = storageAccount.name
 output blobEndpoint string = storageAccount.properties.primaryEndpoints.blob
+output tableEndpoint string = storageAccount.properties.primaryEndpoints.table
+output tableName string = table.name

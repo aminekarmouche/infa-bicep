@@ -8,20 +8,20 @@ param containerAppName string = 'myContainerApp'
 param location string = resourceGroup().location
 
 // Create the Managed Environment for Azure Container Apps
-resource managedEnvironment 'Microsoft.App/managedEnvironments@2023-03-01' = {
+resource managedEnvironment 'Microsoft.App/managedEnvironments@2024-03-01' = {
   name: managedEnvironmentName
   location: location
 }
 
 // Create the Azure Container Registry (ACR)
 resource acr 'Microsoft.ContainerRegistry/registries@2023-01-01-preview' = {
-  name: 'myContainerRegistry'
+  name: 'mycontainerregistry${uniqueString(resourceGroup().id)}'
   location: location
   sku: {
     name: 'Basic'
   }
   properties: {
-    adminUserEnabled: false  // Admin user disabled; using Managed Identity instead
+    adminUserEnabled: false
   }
 }
 
@@ -29,6 +29,17 @@ resource acr 'Microsoft.ContainerRegistry/registries@2023-01-01-preview' = {
 resource managedIdentity 'Microsoft.ManagedIdentity/userAssignedIdentities@2023-01-31' = {
   name: 'myContainerAppIdentity'
   location: location
+}
+
+// Assign AcrPull role to the Managed Identity
+resource acrPullRoleAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
+  name: guid(acr.id, managedIdentity.id, 'AcrPull')
+  scope: acr
+  properties: {
+    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', '7f951dda-4ed3-4680-a7ca-43fe172d538d')
+    principalId: managedIdentity.properties.principalId
+    principalType: 'ServicePrincipal'
+  }
 }
 
 // Create the Azure Container App
@@ -59,15 +70,18 @@ resource containerApp 'Microsoft.App/containerApps@2024-03-01' = {
       containers: [
         {
           name: 'myContainer'
-          image: '${acr.properties.loginServer}/myapp:latest'  // Reference the container image from ACR
+          image: 'mcr.microsoft.com/azuredocs/containerapps-helloworld:latest'
           resources: {
             cpu: json('0.5')
-            memory: '250Mb'
+            memory: '1Gi'
           }
         }
       ]
     }
   }
+  dependsOn: [
+    acrPullRoleAssignment
+  ]
 }
 
 // Outputs for debugging or further use

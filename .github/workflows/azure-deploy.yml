@@ -37,9 +37,18 @@ jobs:
         deploymentName: vnet-deployment
 
     - name: Deploy container app
+      if: false
       uses: azure/arm-deploy@v1
       with:
         scope: resourcegroup
         resourceGroupName: 'rg-sandbox-dev'
         template: ./bicep/environments/containerApp.bicep
         deploymentName: vnet-deployment
+
+    - name: Deploy storage account with table
+      uses: azure/arm-deploy@v1
+      with:
+        scope: resourcegroup
+        resourceGroupName: 'rg-sandbox-dev'
+        template: ./bicep/environments/storage.bicep
+        deploymentName: storage-deployment

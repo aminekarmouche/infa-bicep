@@ -13,18 +13,6 @@ resource managedEnvironment 'Microsoft.App/managedEnvironments@2024-03-01' = {
   location: location
 }
 
-// Create the Azure Container Registry (ACR)
-resource acr 'Microsoft.ContainerRegistry/registries@2023-01-01-preview' = {
-  name: 'mycontainerregistry${uniqueString(resourceGroup().id)}'
-  location: location
-  sku: {
-    name: 'Basic'
-  }
-  properties: {
-    adminUserEnabled: true
-  }
-}
-
 // Create the User-Assigned Managed Identity
 resource managedIdentity 'Microsoft.ManagedIdentity/userAssignedIdentities@2023-01-31' = {
   name: 'myContainerAppIdentity'
@@ -48,19 +36,6 @@ resource containerApp 'Microsoft.App/containerApps@2024-03-01' = {
         external: true
         targetPort: 80
       }
-      registries: [
-        {
-          server: acr.properties.loginServer
-          username: acr.listCredentials().username
-          passwordSecretRef: 'acr-password'
-        }
-      ]
-      secrets: [
-        {
-          name: 'acr-password'
-          value: acr.listCredentials().passwords[0].value
-        }
-      ]
     }
     template: {
       containers: [

@@ -21,7 +21,7 @@ resource acr 'Microsoft.ContainerRegistry/registries@2023-01-01-preview' = {
     name: 'Basic'
   }
   properties: {
-    adminUserEnabled: false
+    adminUserEnabled: true
   }
 }
 
@@ -31,17 +31,6 @@ resource managedIdentity 'Microsoft.ManagedIdentity/userAssignedIdentities@2023-
   location: location
 }
 
-// Assign AcrPull role to the Managed Identity
-resource acrPullRoleAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
-  name: guid(acr.id, managedIdentity.id, 'AcrPull')
-  scope: acr
-  properties: {
-    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', '7f951dda-4ed3-4680-a7ca-43fe172d538d')
-    principalId: managedIdentity.properties.principalId
-    principalType: 'ServicePrincipal'
-  }
-}
-
 // Create the Azure Container App
 resource containerApp 'Microsoft.App/containerApps@2024-03-01' = {
   name: containerAppName
@@ -49,20 +38,27 @@ resource containerApp 'Microsoft.App/containerApps@2024-03-01' = {
   identity: {
     type: 'UserAssigned'
     userAssignedIdentities: {
-      '${managedIdentity.id}': {}  // Use the Managed Identity for the Container App
+      '${managedIdentity.id}': {}
     }
   }
   properties: {
-    managedEnvironmentId: managedEnvironment.id  // Reference the Managed Environment
+    managedEnvironmentId: managedEnvironment.id
     configuration: {
       ingress: {
-        external: true  // Publicly accessible
+        external: true
         targetPort: 80
       }
       registries: [
         {
-          server: acr.properties.loginServer  // ACR login server
-          identity: managedIdentity.id  // Use Managed Identity for ACR authentication
+          server: acr.properties.loginServer
+          username: acr.listCredentials().username
+          passwordSecretRef: 'acr-password'
+        }
+      ]
+      secrets: [
+        {
+          name: 'acr-password'
+          value: acr.listCredentials().passwords[0].value
         }
       ]
     }
@@ -79,9 +75,6 @@ resource containerApp 'Microsoft.App/containerApps@2024-03-01' = {
       ]
     }
   }
-  dependsOn: [
-    acrPullRoleAssignment
-  ]
 }
 
 // Outputs for debugging or further use

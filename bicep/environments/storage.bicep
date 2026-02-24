@@ -25,6 +25,15 @@ resource blobContainer 'Microsoft.Storage/storageAccounts/blobServices/container
   name: 'defaultcontainer'
 }
 
+// New CMS blob container
+resource cmsBlobContainer 'Microsoft.Storage/storageAccounts/blobServices/containers@2023-01-01' = {
+  parent: blobService
+  name: 'cms'
+  properties: {
+    publicAccess: 'None'
+  }
+}
+
 @description('Vulnerabilities')
 param tableName string = 'vulnerabilities'
 
@@ -42,3 +51,4 @@ output storageAccountName string = storageAccount.name
 output blobEndpoint string = storageAccount.properties.primaryEndpoints.blob
 output tableEndpoint string = storageAccount.properties.primaryEndpoints.table
 output tableName string = table.name
+output cmsBlobContainerName string = cmsBlobContainer.name
